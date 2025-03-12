@@ -6,30 +6,12 @@ require("dotenv").config();
 
 userController.create = async (req, res) => {
   try {
-    const { name, email, mobile, password, confirmPassword } = req.body;
+    const { fullName, mobile, password} = req.body;
 
-    if (!name || !email || !mobile || !password || !confirmPassword) {
+    if (!fullName || !mobile || !password) {
       return res.send({
         status: false,
         message: "All fields are required",
-        data: null,
-      });
-    }
-
-    if (password !== confirmPassword) {
-      return res.send({
-        status: false,
-        message: "Password and Confirm Password do not match",
-        data: null,
-      });
-    }
-
-    const registeredEmail = await userService.findEmail(email);
-
-    if (registeredEmail) {
-      return res.send({
-        status: false,
-        message: "Email already exists",
         data: null,
       });
     }
@@ -44,7 +26,7 @@ userController.create = async (req, res) => {
       });
     }
 
-    const register = await userService.create(name, email, mobile, password);
+    const register = await userService.create(fullName, mobile, password);
 
     if (!register) {
       return res.send({
@@ -70,9 +52,9 @@ userController.create = async (req, res) => {
 
 userController.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { mobile, password } = req.body;
 
-    if (!email || !password) {
+    if (!mobile || !password) {
       return res.send({
         status: false,
         message: "All fields are required",
@@ -80,19 +62,19 @@ userController.login = async (req, res) => {
       });
     }
 
-    const registeredEmail = await userService.findEmail(email);
+    const registeredMobile = await userService.findMobile(mobile);
 
-    if (!registeredEmail) {
+    if (!registeredMobile) {
       return res.send({
         status: false,
-        message: "Email not found",
+        message: "user not found",
         data: null,
       });
     }
 
     const matchUserPassword = bcrypt.compareSync(
       password,
-      registeredEmail.password
+      registeredMobile.password
     );
 
     if (!matchUserPassword) {
@@ -104,8 +86,8 @@ userController.login = async (req, res) => {
     }
 
     var token = jwt.sign(
-      { _id: registeredEmail._id },
-      process.env.SECRET_TOKEN
+      { _id: registeredMobile._id },
+      process.env.JWT_SECRET
     );
 
     return res.send({
@@ -118,105 +100,6 @@ userController.login = async (req, res) => {
     return res.send({
       status: false,
       message: "something went wrong to login",
-      error,
-    });
-  }
-};
-
-userController.findSingleUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (id) {
-      const singleUser = await userService.findSingleUser(id);
-      if (!singleUser) {
-        return res.send({
-          status: false,
-          message: "single user not found",
-          data: null,
-        });
-      }
-
-      return res.send({
-        status: true,
-        message: "single user found successfully",
-        data: singleUser,
-      });
-    }
-
-  } catch (error) {
-    console.log(error);
-    return res.send({
-      status: false,
-      message: "something went wrong to find single user",
-      error,
-    });
-  }
-};
-
-userController.findAllUsers = async (req, res) => {
-  try {
-    const allUsers = await userService.findAllUsers();
-    if (allUsers) {
-      return res.send({
-        status: true,
-        message: "all users found",
-        data: allUsers,
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.send({
-      status: false,
-      message: "something went wrong to find all users",
-      error,
-    });
-  }
-};
-
-userController.updateUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email, mobile } = req.body;
-
-    if (id && name && email && mobile) {
-      const userUpdate = await userService.updateUser(id, name, email, mobile)
-       
-      if (userUpdate) {
-        return res.send({
-          status: true,
-          message: "user updated successfully",
-          data: userUpdate,
-        });
-      }
-    }
-  } catch (error) {
-    console.log(error);
-    return res.send({
-      status: false,
-      message: "something went wrong to update user",
-      error,
-    });
-  }
-};
-
-userController.deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (id) {
-      const deleteUser = await userService.deleteUser(id);
-      if (deleteUser) {
-        return res.send({
-          status: true,
-          message: "user deleted successfully",
-          data: deleteUser,
-        });
-      }
-    }
-  } catch (error) {
-    console.log(error);
-    return res.send({
-      status: false,
-      message: "something went wrong to delete user",
       error,
     });
   }

@@ -2,12 +2,12 @@ const Joi = require('joi');
 
 const loginSchema = Joi.object({
     
-    email: Joi.string()
-        .email()
-        .required()
-        .messages({
-            'string.empty': 'Email is required.',
-            'string.email': 'Invalid email format.',
+     mobile: Joi.string()
+         .pattern(/^[0-9]{10}$/)
+         .required()
+         .messages({
+         "string.empty": "Mobile number is required.",
+         "string.pattern.base": "Mobile number must be 10 digits.",
         }),
 
     password: Joi.string()

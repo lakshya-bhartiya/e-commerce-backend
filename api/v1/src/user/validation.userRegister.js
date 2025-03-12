@@ -2,7 +2,7 @@ const Joi = require("joi");
 
 const registerSchema = Joi.object({
 
-  name: Joi.string()
+  fullName: Joi.string()
      .min(3)
      .max(50)
      .required()
@@ -10,14 +10,6 @@ const registerSchema = Joi.object({
      "string.empty": "Name is required.",
      "string.min": "Name must be at least 3 characters long.",
      "string.max": "Name cannot exceed 50 characters.",
-  }),
-
-  email: Joi.string()
-     .email()
-     .required()
-     .messages({
-     "string.empty": "Email is required.",
-     "string.email": "Invalid email format.",
   }),
 
   mobile: Joi.string()
@@ -40,14 +32,6 @@ const registerSchema = Joi.object({
     "string.pattern.base":
     "Password must include uppercase, lowercase, number, and special character.",
     }),
-
-  confirmPassword: Joi.string()
-    .required()
-    .valid(Joi.ref("password"))
-    .messages({
-    "any.only": "Confirm Password must match Password.",
-    "string.empty": "Confirm Password is required.",
-  }),
 });
 
 module.exports = registerSchema;
