@@ -1,16 +1,20 @@
-const userModel = require("./model.user");
-const userService = {};
+const User = require("./model.user");
 const bcrypt = require("bcrypt");
 
-userService.create = async (fullName, mobile, password) => {
-  const hash = bcrypt.hashSync(password, 10);
-  const register = await userModel.create({fullName, mobile, password: hash});
-  return register;
+const userService = {};
+
+userService.registerUser = async ({ name, email, password, mobile }) => {
+    const hash = bcrypt.hashSync(password, 10);
+    const newUser = await User.create({ name, email, password: hash, mobile });
+    return newUser;
 };
 
-userService.findMobile = async (mobile) => {
-  const registeredMobile = await userModel.findOne({ mobile });
-  return registeredMobile;
+userService.findUserByEmail = async (email) => {
+    return await User.findOne({ email });
+};
+
+userService.findUserByMobile = async (mobile) => {
+    return await User.findOne({ mobile });
 };
 
 module.exports = userService;

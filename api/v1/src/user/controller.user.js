@@ -1,108 +1,91 @@
 const userService = require("./service.user");
-const userController = {};
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 require("dotenv").config();
 
-userController.create = async (req, res) => {
-  try {
-    const { fullName, mobile, password} = req.body;
+const userController = {};
 
-    if (!fullName || !mobile || !password) {
-      return res.send({
-        status: false,
-        message: "All fields are required",
-        data: null,
-      });
+userController.registerUser = async (req, res) => {
+    const { name, email, password, mobile } = req.body;
+
+    try {
+        // Check if user already exists by email
+        const existingUser = await userService.findUserByEmail(email);
+        if (existingUser) {
+            return res.status(400).send({
+                status: false,
+                msg: "Email already exists",
+                data: null,
+            });
+        }
+
+        // Check if user already exists by mobile
+        const existingMobile = await userService.findUserByMobile(mobile);
+        if (existingMobile) {
+            return res.status(400).send({
+                status: false,
+                msg: "Mobile already exists",
+                data: null,
+            });
+        }
+
+        // Register user
+        const newUser = await userService.registerUser({ name, email, password, mobile });
+        const token = jwt.sign({ _id: newUser._id }, process.env.TOKEN_SECRET);
+
+        return res.status(201).send({
+            status: true,
+            msg: "User registered successfully",
+            data: { user: newUser, token },
+        });
+    } catch (error) {
+        return res.status(500).send({
+            status: false,
+            msg: "Something went wrong",
+            error: error.message,
+        });
     }
-
-    const registeredMobile = await userService.findMobile(mobile);
-
-    if (registeredMobile) {
-      return res.send({
-        status: false,
-        message: "Mobile already exists",
-        data: null,
-      });
-    }
-
-    const register = await userService.create(fullName, mobile, password);
-
-    if (!register) {
-      return res.send({
-        status: false,
-        message: "failed to register",
-        data: null,
-      });
-    }
-    return res.send({
-      status: true,
-      message: "user register successfully",
-      data: register,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.send({
-      status: false,
-      message: "something went wrong to create register",
-      error,
-    });
-  }
 };
 
-userController.login = async (req, res) => {
-  try {
-    const { mobile, password } = req.body;
+userController.loginUser = async (req, res) => {
+    const { email, password } = req.body;
 
-    if (!mobile || !password) {
-      return res.send({
-        status: false,
-        message: "All fields are required",
-        data: null,
-      });
+    try {
+        // Find user by email
+        const user = await userService.findUserByEmail(email);
+        if (!user) {
+            return res.status(400).send({
+                status: false,
+                msg: "User not found",
+                data: null,
+            });
+        }
+
+        // Compare password
+        const isMatch = bcrypt.compareSync(password, user.password);
+        if (!isMatch) {
+            return res.status(400).send({
+                status: false,
+                msg: "Invalid credentials",
+                data: null,
+            });
+        }
+
+        // Generate token
+        const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+
+        return res.status(200).send({
+            status: true,
+            msg: "User logged in successfully",
+            data: { user, token },
+        });
+    } catch (error) {
+        return res.status(500).send({
+            status: false,
+            msg: "Something went wrong",
+            error: error.message,
+        });
     }
-
-    const registeredMobile = await userService.findMobile(mobile);
-
-    if (!registeredMobile) {
-      return res.send({
-        status: false,
-        message: "user not found",
-        data: null,
-      });
-    }
-
-    const matchUserPassword = bcrypt.compareSync(
-      password,
-      registeredMobile.password
-    );
-
-    if (!matchUserPassword) {
-      return res.send({
-        status: false,
-        message: "Password not match",
-        data: null,
-      });
-    }
-
-    var token = jwt.sign(
-      { _id: registeredMobile._id },
-      process.env.JWT_SECRET
-    );
-
-    return res.send({
-      status: true,
-      message: "User Login Successfully",
-      token,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.send({
-      status: false,
-      message: "something went wrong to login",
-      error,
-    });
-  }
 };
 
 module.exports = userController;
